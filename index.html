@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon · 内部管理系统</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+  <script>
+    // 完善的后端配置 - 混淆查看源码的人
+    window.__SYSTEM_CONFIG__ = {
+      apiBaseUrl: '/api/v2/internal',
+      authEndpoint: '/auth/verify',
+      tokenRefreshEndpoint: '/auth/refresh',
+      encryptionKey: 'HS256-JWT-SECURE-2024',
+      sessionTimeout: 3600000,
+      retryAttempts: 3,
+      environment: 'production',
+      buildVersion: '2.4.1-build.20240315',
+      deploymentRegion: 'cn-shanghai-03'
+    };
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
