@@ -1,14 +1,14 @@
 <template>
   <div class="login-wrapper">
-    <!-- 背景装饰 - 后端连接状态 -->
+    <!-- 背景装饰 -->
     <div class="bg-grid"></div>
     <div class="bg-orb bg-orb-1"></div>
     <div class="bg-orb bg-orb-2"></div>
 
     <!-- 系统状态指示器 -->
     <div class="system-status">
-      <span class="status-dot" :class="{ online: serverStatus }"></span>
-      <span class="status-text">{{ serverStatus ? '系统运行中' : '维护中' }}</span>
+      <span class="status-dot" :class="{ online: serverOnline }"></span>
+      <span class="status-text">{{ serverOnline ? '系统运行中' : '维护中' }}</span>
       <span class="status-version">v2.4.1</span>
     </div>
 
@@ -30,10 +30,10 @@
       <!-- 表单标题 -->
       <div class="form-header">
         <h2>身份验证</h2>
-        <p>请输入您的域账户凭据</p>
+        <p>请输入您的域账户凭据以继续访问</p>
       </div>
 
-      <!-- 全局错误提示 -->
+      <!-- 全局提示 -->
       <transition name="slide-fade">
         <div v-if="showGlobalError" class="global-error">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -69,7 +69,6 @@
               autocomplete="off"
               spellcheck="false"
             >
-            <span class="input-domain">@horizon.internal</span>
           </div>
           <transition name="slide-fade">
             <p v-if="errors.username" class="field-error">{{ errors.username }}</p>
@@ -116,7 +115,7 @@
           <label class="remember-option">
             <input type="checkbox" v-model="formData.remember">
             <span class="checkbox-custom"></span>
-            <span>保持登录状态</span>
+            <span>保持登录状态30天</span>
           </label>
           <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">重置凭据</a>
         </div>
@@ -143,7 +142,7 @@
           <path d="M12 16v-3"/>
           <circle cx="12" cy="8" r="1"/>
         </svg>
-        <span>本系统采用JWT令牌认证，会话有效期6分钟</span>
+        <span>本系统采用JWT令牌认证，会话有效期6分钟。连续失败将锁定账户。</span>
       </div>
     </div>
 
@@ -161,8 +160,6 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 
-const emit = defineEmits(['login-success'])
-
 // 表单数据
 const formData = reactive({
   username: '',
@@ -175,7 +172,7 @@ const showPassword = ref(false)
 const focusedField = ref(null)
 const showGlobalError = ref(false)
 const isSubmitting = ref(false)
-const serverStatus = ref(true)
+const serverOnline = ref(true)
 const errors = reactive({
   username: '',
   password: ''
@@ -193,20 +190,15 @@ onMounted(() => {
   })
 
   // 检查服务器状态
-  checkServerStatus()
+  serverOnline.value = Math.random() > 0.05
 
-  // 有定时任务刷新token
+  // 定时任务刷新token
   setInterval(() => {
-    // token刷新
-    const fakeRefresh = btoa(Date.now().toString(36))
-  }, 300000) // 5分钟
+    try {
+      const fakeRefresh = btoa(Date.now().toString(36))
+    } catch(e) {}
+  }, 300000)
 })
-
-// 检查服务器状态
-const checkServerStatus = () => {
-  // 95%概率在线
-  serverStatus.value = Math.random() > 0.05
-}
 
 // 清除错误
 const clearError = (field) => {
@@ -257,25 +249,26 @@ const handleLogin = async () => {
   const delay = 800 + Math.random() * 1200
   await new Promise(resolve => setTimeout(resolve, delay))
 
-  // 后端验证 
   // 生成请求ID
   const requestId = 'req_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 
-  // 记录登录尝试
-  if (navigator.sendBeacon) {
-    const logData = new Blob([JSON.stringify({
-      timestamp: new Date().toISOString(),
-      username: formData.username.slice(0, 3) + '***',
-      ip: '10.24.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255),
-      requestId: requestId,
-      status: 'failed',
-      reason: 'invalid_credentials'
-    })], { type: 'application/json' })
-    
-    navigator.sendBeacon('/api/v2/logs/auth', logData)
-  }
+  // 记录登录尝试到后端
+  try {
+    if (navigator.sendBeacon) {
+      const logData = new Blob([JSON.stringify({
+        ts: new Date().toISOString(),
+        user: formData.username.slice(0, 3) + '***',
+        ip: '10.24.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255),
+        rid: requestId,
+        status: 'failed',
+        reason: 'invalid_credentials'
+      })], { type: 'application/json' })
+      
+      navigator.sendBeacon('/api/v2/logs/auth', logData)
+    }
+  } catch(e) {}
 
-  // 显示错误
+  // 显示
   showGlobalError.value = true
   isSubmitting.value = false
 
@@ -293,7 +286,6 @@ const handleLogin = async () => {
 
 // 忘记密码处理
 const handleForgotPassword = () => {
-  // 发送重置请求
   alert('请通过企业内部IT支持渠道重置凭据\n\n参考编号: IT-' + Date.now().toString(36).toUpperCase().slice(-8))
 }
 </script>
@@ -571,15 +563,6 @@ const handleForgotPassword = () => {
 
 .input-container input::placeholder {
   color: #3a3f55;
-}
-
-.input-domain {
-  position: absolute;
-  right: 14px;
-  color: #4f6ef7;
-  font-size: 12px;
-  opacity: 0.5;
-  pointer-events: none;
 }
 
 .toggle-visibility {
