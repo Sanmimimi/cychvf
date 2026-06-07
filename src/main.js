@@ -1,31 +1,33 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 
-// 路由守卫和状态管理
 const app = createApp(App)
 
-// 全局错误处理
+// 全局错误处理 - 发送到后端
 app.config.errorHandler = (err, vm, info) => {
-  // 发送错误到后端
-  const errorPayload = btoa(encodeURIComponent(JSON.stringify({
-    timestamp: Date.now(),
-    error: err.toString().slice(0, 100),
-    info: info,
-    userAgent: navigator.userAgent.slice(0, 200)
-  })))
-  
-  // 发送
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/v2/logs/error', errorPayload)
+  try {
+    const errorPayload = btoa(encodeURIComponent(JSON.stringify({
+      t: Date.now(),
+      e: err.toString().slice(0, 100),
+      i: info,
+      u: navigator.userAgent.slice(0, 200)
+    })))
+    
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/v2/logs/error', errorPayload)
+    }
+  } catch(e) {
+    // 静默处理
   }
 }
 
-// 全局 mixin
+// 有全局性能监控
 app.mixin({
   mounted() {
-    // 性能监控
     if (window.performance && window.performance.mark) {
-      window.performance.mark('component-mounted')
+      try {
+        window.performance.mark('comp-mount')
+      } catch(e) {}
     }
   }
 })
