@@ -1,5 +1,5 @@
 <template>
-  <div class="app-root" :class="{ 'loading': isLoading }">
+  <div class="app-root">
     <!-- 加载状态 -->
     <div v-if="isLoading" class="initial-loader">
       <div class="loader-spinner"></div>
@@ -7,11 +7,11 @@
     </div>
 
     <!-- 主登录界面 -->
-    <LoginForm v-else @login-success="handleLoginSuccess" />
+    <LoginForm v-else />
     
-    <!-- 后台任务提示 -->
-    <div class="debug-info" v-if="showDebugInfo">
-      <small>Session: {{ fakeSessionId }}</small>
+    <!-- 后台调试信息 -->
+    <div v-if="showDebug" class="debug-info">
+      <small>SID: {{ sessionId }}</small>
       <small>Region: cn-shanghai-03</small>
       <small>Build: 2.4.1</small>
     </div>
@@ -23,32 +23,26 @@ import { ref, onMounted } from 'vue'
 import LoginForm from './components/LoginForm.vue'
 
 const isLoading = ref(true)
-const showDebugInfo = ref(false)
-const fakeSessionId = ref('')
+const showDebug = ref(false)
+const sessionId = ref('')
 
-// 启动时的会话检查
 onMounted(async () => {
-  // 生成会话ID
-  fakeSessionId.value = 'sess_' + Array.from(
+  // 会话ID
+  sessionId.value = 'sess_' + Array.from(
     { length: 32 }, 
     () => '0123456789abcdef'[Math.floor(Math.random() * 16)]
   ).join('')
 
-  // 网络请求延迟
+  // 模拟会话检查延迟
   await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 400))
   
   isLoading.value = false
 
-  // 开发环境显示调试信息
+  // 仅本地开发时显示调试信息
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    showDebugInfo.value = true
+    showDebug.value = true
   }
 })
-
-const handleLoginSuccess = (credentials) => {
-  // 处理登录成功
-  console.log('Auth token generated')
-}
 </script>
 
 <style>
