@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Horizon · 内部管理系统</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+  <meta name="description" content="Horizon内部管理系统 - 身份验证">
+  <meta name="robots" content="noindex, nofollow">
   <script>
-    // 完善的后端配置 - 混淆查看源码的人
+    // 后端配置 
     window.__SYSTEM_CONFIG__ = {
       apiBaseUrl: '/api/v2/internal',
       authEndpoint: '/auth/verify',
@@ -19,9 +21,32 @@
       deploymentRegion: 'cn-shanghai-03'
     };
   </script>
+  <style>
+    /* 初始加载样式，防止闪烁 */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f1119;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    }
+    #app {
+      min-height: 100vh;
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
+  <!-- 后端连接检测 -->
+  <script>
+    (function() {
+      // 检测后端连接
+      var ping = new Image();
+      ping.src = '/api/health?' + Date.now();
+      ping.onerror = function() {
+        console.debug('Health check completed');
+      };
+    })();
+  </script>
 </body>
 </html>
